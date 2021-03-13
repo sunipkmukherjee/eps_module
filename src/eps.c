@@ -1,5 +1,5 @@
 /**
- * @file eps_extern.h
+ * @file eps.c
  * @author Mit Bailey (mitbailey99@gmail.com)
  * @brief 
  * @version 0.1
@@ -9,16 +9,16 @@
  *
  */
 
-#ifndef EPS_EXTERN_H
-#define EPS_EXTERN_H
-
-//#include <pthread.h>
 #include <eps.h>
 
-#ifndef EPS_IFACE_H
+int eps_init(){
 
+}
 
+void *eps_thread(void *tid){
 
-#endif // EPS_IFACE_H
+}
 
-#endif // EPS_EXTERN_H
+void eps_destroy(){
+    
+}

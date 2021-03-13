@@ -1,5 +1,5 @@
 /**
- * @file 
+ * @file eps.h
  * @author Mit Bailey (mitbailey99@gmail.com)
  * @brief 
  * @version 0.1
@@ -8,3 +8,38 @@
  * @copyright Copyright (c) 2021
  *
  */
+
+#ifndef EPS_H
+#define EPS_H
+#include <eps_extern.h>
+
+// Put other defines here.
+
+/**
+ * @brief Initializes the devices required to run the electronic power supply.
+ * 
+ * This function initializes everything necessary for the EPS to operate.
+ *  
+ * @return int 1 on success, error codes defined in SH_ERRORS on error.
+ */
+int eps_init();
+
+/**
+ * @brief EPS thread.
+ * 
+ * @param tid Pointer to an integer containing the thread ID.
+ * @return NULL.
+ */
+void *eps_thread(void *tid);
+
+/**
+ * @brief TBD.
+ * 
+ * TBD
+ * 
+ * @return NULL.
+ */
+void eps_destroy();
+
+
+#endif // EPS_H
