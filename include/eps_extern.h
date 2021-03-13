@@ -12,7 +12,7 @@
 #ifndef EPS_EXTERN_H
 #define EPS_EXTERN_H
 
-//#include <pthread.h>
+//#include <pthread.h> <-- This should be uncommented.
 #include <eps.h>
 
 #ifndef EPS_IFACE_H

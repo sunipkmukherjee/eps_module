@@ -15,6 +15,9 @@
 
 // Put other defines here.
 
+#define EPS_I2C_ADDR 0x7d        // Temporary designation (from eps_telem.h)
+#define EPS_I2C_BUS "/dev/i2c-0" // I2C bus (from eps_telem.h)
+
 /**
  * @brief Initializes the devices required to run the electronic power supply.
  * 
