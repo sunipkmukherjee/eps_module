@@ -1,9 +1,9 @@
 /**
  * @file eps.h
  * @author Mit Bailey (mitbailey99@gmail.com)
- * @brief
- * @version 0.1
- * @date 2021-03-13
+ * @brief Declarations of EPS command handling functions and structures.
+ * @version 0.2
+ * @date 2021-03-17
  *
  * @copyright Copyright (c) 2021
  *
@@ -11,42 +11,73 @@
 
 #ifndef EPS_H
 #define EPS_H
+
 #include <eps_extern.h>
 #include <stdbool.h>
+#include <stdint.h>
 
- /**
-  * @brief Node object for the command queue.
-  *
-  */
-typedef struct Node {
-	uint8_t* cmd;
-	node_t* next;
-} node_t;
+/**
+ * @brief Node object for the return queue.
+ *
+ * retval: Points to where the corresponding command will place its return value.
+ * next: Points to the next RetNode in the queue.
+ *
+ */
+typedef struct RetNode {
+    void* retval;
+    struct RedNode* next;
+} retnode_t;
+
+/**
+ * @brief Node object for the command queue.
+ *
+ * cmd: Points to where the command array begins.
+ * next: Points to the next CmdNode in the queue.
+ * retnode: Points to the location of the return queue node which
+ *          holds a void* to where the return value will be placed.
+ *
+ */
+typedef struct CmdNode {
+    uint8_t* cmd;
+    struct CmdNode* next;
+    retnode_t* retnode;
+} cmdnode_t;
 
 /**
  * @brief Queue which holds EPS commands for processing.
  *
  */
 typedef struct CmdQ {
-	node_t* head;
-	node_t* tail;
-	uint8_t size;
-	const uint8_t maxSize; // maxSize = 255
+    cmdnode_t* head;
+    cmdnode_t* tail;
+    uint8_t size;
+    const uint8_t maxSize; // maxSize = 255
 } cmdq_t;
+
+/**
+ * @brief Queue which holds EPS command return values.
+ *
+ */
+typedef struct RetQ {
+    retnode_t* head;
+    retnode_t* tail;
+    uint8_t size;
+    const uint8_t maxSize; // maxSize = 255
+} retq_t;
 
 /**
  * @brief Adds a command to the queue.
  *
- * @return bool True on success.
+ * @return Pointer to a location which will hold the return value on execution.
  */
-bool eps_cmdq_enqueue(uint8_t value[]);
+void* eps_cmdq_enqueue(uint8_t value[]);
 
 /**
  * @brief Returns and removes the next command in the queue.
  *
  * @return note_t* The next command in the queue.
  */
-node_t* eps_cmdq_dequeue();
+cmdnode_t* eps_cmdq_dequeue();
 
 /**
  * @brief Executes the next command in the queue.
@@ -62,39 +93,43 @@ int eps_cmdq_execute();
 void eps_cmdq_destroy();
 
 /**
- * @brief Queues an EPS ping command request.
+ * @brief Allocates a space for the eventual return value in the return queue.
  *
+ * Similar to enqueue.
+ *
+ * @return Returns a pointer to a retnode_t object.
  */
-void eps_ping();
+retnode_t* eps_retq_allocate();
 
 /**
- * @brief Queues an EPS reboot command request.
+ * @brief Removes and frees the head node from the queue, setting a new head.
  *
+ * This function detaches the head node from the queue and frees it.
+ * It should be called whenever a command is executed (or removed for
+ * whatever reason). It does not free() the node's pointer to the
+ * return value in memory, void* retval, because that would prevent
+ * whomever queued the command from accessing their return value. The
+ * return value memory must be free()'d by the original caller.
+ *
+ * eps_req_remove's return value is typically only used by eps_retq_destroy().
+ *
+ * @return Returns a pointer to the void pointer to the command's return value.
  */
-void eps_reboot();
+void* eps_retq_remove();
 
 /**
- * @brief Queues an EPS latch toggle command request.
+ * @brief Destroys / frees the entire return queue.
  *
- * @param lup ID of latchup (0 -> 5V1, 1 -> 5V2, 2 -> 5V3, 3 -> 3V1, 4 -> 3V2, 5 -> 3V3)
  */
-void eps_latchToggle(eps_lup_idx lup);
+void eps_retq_destroy();
 
 /**
- * @brief Queues an EPS latch set command request.
+ * @brief Initializes the devices required to run the electronic power supply.
  *
- * @param lup ID of latchup (0 -> 5V1, 1 -> 5V2, 2 -> 5V3, 3 -> 3V1, 4 -> 3V2, 5 -> 3V3)
- * @param pw 0 for off, 1 for on
+ * This function initializes everything necessary for the EPS to operate.
+ *
+ * @return int 1 on success, error codes defined in SH_ERRORS on error.
  */
-void eps_latchSet(eps_lup_idx lup, int pw);
-
- /**
-  * @brief Initializes the devices required to run the electronic power supply.
-  *
-  * This function initializes everything necessary for the EPS to operate.
-  *
-  * @return int 1 on success, error codes defined in SH_ERRORS on error.
-  */
 int eps_init();
 
 /**
