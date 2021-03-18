@@ -121,7 +121,7 @@ cmdnode_t* eps_cmdq_dequeue() {
 
 // Dequeues the top next command, executes it, and frees the memory.
 int eps_cmdq_execute() {
-    cmdnode_t* node = dequeue();
+    cmdnode_t* node = eps_cmdq_dequeue();
 
     if (node == NULL) {
         perror("Dequeueing error!");
@@ -158,7 +158,7 @@ int eps_cmdq_execute() {
 
 void eps_cmdq_destroy() {
     while (globalCmdQ->head != NULL) {
-        free(dequeue());
+        free(eps_cmdq_dequeue());
     }
     return;
 }
