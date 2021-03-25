@@ -16,49 +16,50 @@
 #include <stdbool.h>
 #include <pthread.h>
 
- /* Variable allocation for EPS */
+/* Variable allocation for EPS */
 
- /**
+/**
   * @brief The EPS object pointer.
   *
   */
-p31u* eps;
+static p31u *eps;
 
 /**
  * @brief The command queue.
  *
  */
-cmdq_t* globalCmdQ;
+static cmdq_t *globalCmdQ;
 
 /**
  * @brief The return queue.
  *
  */
-retq_t* globalRetQ;
+static retq_t *globalRetQ;
 
 /**
- * @brief Condition variable for use with eps_mutex.
- *
+ * @brief Thread local variable that enqueue waits upon
+ * 
  */
-pthread_cond_t eps_ready;
-
+__thread pthread_cond_t eps_cmd_wait[1];
 /**
- * @brief Mutex to ensure secure data access.
- *
+ * @brief Mutex for the queue wait
+ * 
  */
-pthread_mutex_t eps_mutex;
+__thread pthread_mutex_t eps_cmd_wait_m[1];
 
-
-void* eps_cmdq_enqueue(uint8_t value[]) {
+void *eps_cmdq_enqueue(uint8_t value[])
+{
     // Check if the command ID, value[0], coordinates correctly with the size of
     // the array (number of arguments).
     // NOT YET IMPLEMENTED!
 
+    int retval = 0;
     // Allocate memory for a new node.
-    cmdnode_t* newNode = malloc(sizeof(cmdnode_t));
+    cmdnode_t *newNode = malloc(sizeof(cmdnode_t));
 
     // Check if malloc was successful.
-    if (newNode == NULL) {
+    if (newNode == NULL)
+    {
         perror("Unable to allocate memory to enqueue command queue!");
         return NULL;
     }
@@ -66,11 +67,11 @@ void* eps_cmdq_enqueue(uint8_t value[]) {
     // Initialize the values of newNode.
     newNode->cmd = value;
     newNode->next = NULL;
- 
 
     // If the queue->tail already exists, set it's next to the
     // new node. This adds our node to the end of the list.
-    if (globalCmdQ->tail != NULL) {
+    if (globalCmdQ->tail != NULL)
+    {
         globalCmdQ->tail->next = newNode;
     }
 
@@ -81,28 +82,33 @@ void* eps_cmdq_enqueue(uint8_t value[]) {
     // If the queue->head doesn't already exist, set it to the
     // new node. This would only occur if the queue was previously
     // empty, making newNode simultaneously the head and the tail.
-    if (globalCmdQ->head == NULL) {
+    if (globalCmdQ->head == NULL)
+    {
         globalCmdQ->head = newNode;
     }
 
-    // Designate a chunk of memory to store the eventual return value once the
-    // queued command is executed.
-    newNode->retnode = eps_retq_allocate();
+    static struct timespec twait = {.tv_sec = EPS_CMD_TIMEOUT, .tv_nsec = 0};
+    newNode->wakeup = eps_cmd_wait;
+    pthread_cond_timedwait(eps_cmd_wait, eps_cmd_wait_m, &twait);
 
+    retval = newNode->retval;
+
+    free(newNode);
     // Return pointer to where the return value will be.
-    return newNode->retnode->retval;
+    return retval;
 }
 
-
-cmdnode_t* eps_cmdq_dequeue() {
+cmdnode_t *eps_cmdq_dequeue()
+{
     // Check if the queue is empty, and return an error if so.
-    if (globalCmdQ->head == NULL) {
+    if (globalCmdQ->head == NULL)
+    {
         perror("Cannot dequeue an empty command queue!");
         return NULL;
     }
 
     // Set the returnNode to the current command queue's head.
-    cmdnode_t* returnNode = globalCmdQ->head;
+    cmdnode_t *returnNode = globalCmdQ->head;
 
     // Set the command queue's head to the next node, since we
     // are removing the read node.
@@ -111,7 +117,8 @@ cmdnode_t* eps_cmdq_dequeue() {
     // If the head is now NULL because ...->next was NULL
     // (aka there was no next), we should be sure to set our
     // tail to NULL as well.
-    if (globalCmdQ->head == NULL) {
+    if (globalCmdQ->head == NULL)
+    {
         globalCmdQ->tail = NULL;
     }
 
@@ -120,55 +127,64 @@ cmdnode_t* eps_cmdq_dequeue() {
 }
 
 // Dequeues the top next command, executes it, and frees the memory.
-int eps_cmdq_execute() {
-    cmdnode_t* node = eps_cmdq_dequeue();
+int eps_cmdq_execute()
+{
+    int retval = 1;
+    cmdnode_t *node = eps_cmdq_dequeue();
 
-    if (node == NULL) {
+    if (node == NULL)
+    {
         perror("Dequeueing error!");
         return -1;
     }
 
-    switch (node->cmd[0]) {
+    switch (node->cmd[0])
+    {
     case 0: // ping
-        globalRetQ->head->retval = eps_p31u_ping(eps);
+        node->retval = eps_p31u_ping(eps);
         break;
     case 1: // reboot
-        globalRetQ->head->retval = eps_p31u_reboot(eps);
+        node->retval = eps_p31u_reboot(eps);
         break;
     case 2: // toggle latch
-        globalRetQ->head->retval = eps_p31u_tgl_lup(eps, node->cmd[1]);
+        node->retval = eps_p31u_tgl_lup(eps, node->cmd[1]);
         break;
     case 3: // set latch
-        globalRetQ->head->retval = eps_p31u_lup_set(eps, node->cmd[1], node->cmd[2]);
+        node->retval = eps_p31u_lup_set(eps, node->cmd[1], node->cmd[2]);
         break;
     default: // error
         perror("Error: Default case reached in eps_cmdq_execute()!");
-        return -1;
+        retval = -1;
     }
 
     // The command has been executed and its return value has been placed
     // in memory at the corresponding globalReturnQueue->head->retval.
     // This particular return node can be removed and freed, and the
     // location in memory is still accessible by the calling function.
-    eps_retq_remove();
+    // eps_retq_remove();
 
-    free(node);
-    return 1;
+    // free(node);
+    pthread_cond_signal(node->wakeup);
+    return retval;
 }
 
-void eps_cmdq_destroy() {
-    while (globalCmdQ->head != NULL) {
+void eps_cmdq_destroy()
+{
+    while (globalCmdQ->head != NULL)
+    {
         free(eps_cmdq_dequeue());
     }
     return;
 }
 
-retnode_t* eps_retq_allocate() {
+retnode_t *eps_retq_allocate()
+{
     // Allocate memory for a new node.
-    retnode_t* newNode = malloc(sizeof(retnode_t));
+    retnode_t *newNode = malloc(sizeof(retnode_t));
 
     // Check if malloc was successful.
-    if (newNode == NULL) {
+    if (newNode == NULL)
+    {
         perror("Unable to allocate memory to enqueue return queue!");
         return NULL;
     }
@@ -179,7 +195,8 @@ retnode_t* eps_retq_allocate() {
 
     // If the queue->tail already exists, set it's next to the
     // new node. This adds our node to the end of the list.
-    if (globalRetQ->tail != NULL) {
+    if (globalRetQ->tail != NULL)
+    {
         globalRetQ->tail->next = newNode;
     }
 
@@ -190,23 +207,26 @@ retnode_t* eps_retq_allocate() {
     // If the queue->head doesn't already exist, set it to the
     // new node. This would only occur if the queue was previously
     // empty, making newNode simultaneously the head and the tail.
-    if (globalRetQ->head == NULL) {
+    if (globalRetQ->head == NULL)
+    {
         globalRetQ->head = newNode;
     }
 
     return newNode;
 }
 
-void* eps_retq_remove() {
+void *eps_retq_remove()
+{
     // Check if the queue is empty, and return an error if so.
-    if (globalRetQ->head == NULL) {
+    if (globalRetQ->head == NULL)
+    {
         perror("Cannot dequeue an empty return queue!");
         return NULL;
     }
 
     // Set the removeNode to the current return queue's head.
-    retnode_t* removeNode = globalRetQ->head;
-    void* retval = globalRetQ->head->retval;
+    retnode_t *removeNode = globalRetQ->head;
+    void *retval = globalRetQ->head->retval;
 
     // Set the return queue's head to the next node, since we
     // are removing the read node.
@@ -215,40 +235,46 @@ void* eps_retq_remove() {
     // If the head is now NULL because ...->next was NULL
     // (aka there was no next), we should be sure to set our
     // tail to NULL as well.
-    if (globalRetQ->head == NULL) {
+    if (globalRetQ->head == NULL)
+    {
         globalRetQ->tail = NULL;
     }
 
     // Free the removed node.
     free(removeNode);
 
-    // Return nothing. 
+    // Return nothing.
     return retval;
 }
 
-void eps_retq_destroy() {
-    while (globalRetQ->head != NULL) {
-        void* retval = eps_retq_remove();
+void eps_retq_destroy()
+{
+    while (globalRetQ->head != NULL)
+    {
+        void *retval = eps_retq_remove();
         free(retval);
     }
 }
 
 // Initializes the EPS and ping-tests it.
 // int eps_onAwake(){}
-int eps_init() {
+int eps_init()
+{
     //#ifdef EPS_Init
 
-    eps = (p31u*)malloc(sizeof(p31u));
-    globalCmdQ = (cmdq_t*)malloc(sizeof(cmdq_t));
+    eps = (p31u *)malloc(sizeof(p31u));
+    globalCmdQ = (cmdq_t *)malloc(sizeof(cmdq_t));
 
     // Initializes the EPS component while checking if successful.
-    if (eps_p31u_init(eps, 1, 0x1b) <= 0) {
+    if (eps_p31u_init(eps, 1, 0x1b) <= 0)
+    {
         perror("EPS initialization failed!");
         return -1;
     }
 
     // If we can't successfully ping the EPS then something has gone wrong.
-    if (eps_p31u_ping(eps) < 0) {
+    if (eps_p31u_ping(eps) < 0)
+    {
         perror("EPS ping test failed!");
         return -2;
     }
@@ -258,15 +284,15 @@ int eps_init() {
 
 // Accepts the Thread ID from its caller (main.c)
 // void *eps_onStart(void *tid){}
-void *eps_thread(void *tid) {
+void *eps_thread(void *tid)
+{
 
     // 'done' is a global Boolean established in main.h and handled in main.c
     // It is false when this module is alive and true when this module is being
     // shut down.
     // while(moduleAlive){}
-    while (!done) {
-        pthread_cond_wait(&eps_ready, &eps_mutex);
-
+    while (!done)
+    {
         // Reset the watch-dog timer.
         eps_reset_wdt(eps);
 
@@ -279,7 +305,8 @@ void *eps_thread(void *tid) {
 
 // Frees eps memory and destroys the EPS object.
 // void eps_onShutdown(p31u* eps){}
-void eps_destroy() {
+void eps_destroy()
+{
     // Destroy / free command queue.
     eps_cmdq_destroy();
     free(globalCmdQ);

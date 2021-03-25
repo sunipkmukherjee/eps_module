@@ -1,3 +1,6 @@
 [submodule "drivers/eps_p31u"]
 	path = drivers/eps_p31u
-	url = https://github.com/SPACE-HAUC/eps_p31u
+	url = git@github.com:SPACE-HAUC/eps_p31u.git
+[submodule "drivers/i2cbus"]
+	path = drivers/i2cbus
+	url = git@github.com:SPACE-HAUC/i2cbus.git

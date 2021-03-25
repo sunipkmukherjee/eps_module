@@ -14,7 +14,8 @@
 
 #include <pthread.h>
 #include <stdarg.h>
-
+extern __thread pthread_cond_t *eps_cmd_wait;
+extern __thread pthread_mutex_t *eps_cmd_wait_m;
 #ifndef EPS_IFACE_H
 
  /**
@@ -29,7 +30,7 @@
   * @param value An array of uint8_t to determine the command and its arguments.
   * @return int Return value for i2c read/write
   */
-extern void* eps_cmdq_enqueue(uint8_t value[]);
+void* eps_cmdq_enqueue(uint8_t value[]);
 
 #endif // EPS_IFACE_H
 
