@@ -13,8 +13,11 @@
 #define EPS_H
 
 #include <eps_extern.h>
+#include <eps_iface.h>
 #include <stdbool.h>
 #include <stdint.h>
+
+#define EPS_CMD_TIMEOUT 5
 
 /**
  * @brief Node object for the return queue.
@@ -39,8 +42,9 @@ typedef struct RetNode {
  */
 typedef struct CmdNode {
     uint8_t* cmd;
+    pthread_cond_t *wakeup;
     struct CmdNode* next;
-    retnode_t* retnode;
+    int* retval;
 } cmdnode_t;
 
 /**
@@ -122,31 +126,6 @@ void* eps_retq_remove();
  *
  */
 void eps_retq_destroy();
-
-/**
- * @brief Initializes the devices required to run the electronic power supply.
- *
- * This function initializes everything necessary for the EPS to operate.
- *
- * @return int 1 on success, error codes defined in SH_ERRORS on error.
- */
-int eps_init();
-
-/**
- * @brief EPS thread.
- *
- * @param tid Pointer to an integer containing the thread ID.
- * @return NULL.
- */
-void *eps_thread(void *tid);
-
-/**
- * @brief Frees and destroys.
- *
- *
- * @return NULL.
- */
-void eps_destroy();
 
 
 #endif // EPS_H

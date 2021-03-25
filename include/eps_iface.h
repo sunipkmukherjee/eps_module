@@ -14,8 +14,29 @@
 
 #include <pthread.h>
 
+/**
+ * @brief Initializes the devices required to run the electronic power supply.
+ *
+ * This function initializes everything necessary for the EPS to operate.
+ *
+ * @return int 1 on success, error codes defined in SH_ERRORS on error.
+ */
 int eps_init();
+
+/**
+ * @brief EPS thread.
+ *
+ * @param tid Pointer to an integer containing the thread ID.
+ * @return NULL.
+ */
+void *eps_thread(void *tid);
+
+/**
+ * @brief Frees and destroys.
+ *
+ *
+ * @return NULL.
+ */
 void eps_destroy();
-void* eps_thread(void*);
 
 #endif // EPS_IFACE_H
