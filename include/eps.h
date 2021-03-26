@@ -36,8 +36,7 @@ typedef struct RetNode {
  *
  * cmd: Points to where the command array begins.
  * next: Points to the next CmdNode in the queue.
- * retnode: Points to the location of the return queue node which
- *          holds a void* to where the return value will be placed.
+ * retval: Points to the location of the return value or array of values.
  *
  */
 typedef struct CmdNode {

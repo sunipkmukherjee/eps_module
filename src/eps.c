@@ -47,13 +47,46 @@ __thread pthread_cond_t eps_cmd_wait[1];
  */
 __thread pthread_mutex_t eps_cmd_wait_m[1];
 
-void *eps_cmdq_enqueue(uint8_t value[])
+// Enqueue() is the only publicly accessible EPS module function, and allows an
+// outside caller to send the EPS a command request.
+// The function is capable of taking a single command...
+// (uint8_t nCmds, uint8_t nArgs, uint8_t cmd1, uint8_t cmd1Arg1)
+// (1, 2, 2, 0)
+// ...as well as multiple commands in the form of a multi-command...
+// (5,    7,      0,     1,     0,     0,     3,   1,   0)
+//  nCmds nArgs | cmd1 | cmd2 | cmd3 | cmd4 | cmd5 arg1 arg2 |
+// Execute will treat a multi-command as multiple, adjacent commands, and will
+// wait to return until an array can be constructed of all return values for the
+// multi-command.
+int* eps_cmdq_enqueue(uint8_t nCmds, uint8_t nArgs, ...)
 {
-    // Check if the command ID, value[0], coordinates correctly with the size of
-    // the array (number of arguments).
-    // NOT YET IMPLEMENTED!
+    // Allocate memory for an array to store the arguments passed as var args.
+    int* args[] = (int*)malloc(nArgs*sizeof(int));
 
-    int retval = 0;
+        // Check if malloc was successful.
+    if (args == NULL)
+    {
+        perror("Unable to allocate memory to arguments array!");
+        return NULL;
+    }
+
+    // Begin access to passed var args
+    va_list arguments;
+    va_start(arguments. nArgs);
+
+    // Set the first value of args to the total number of commands.
+    args[0] = nCmds;
+
+    // Transfer arguments from va_list arguments to our array of ints, args[]
+    for(int i = 1; i <= nArgs; i++){
+        args[i] = va_args(arguments, int);
+    }
+
+    // Conclude our var arg access.
+    va_end(arguments);
+
+    //// Enqueueing takes place below ////
+
     // Allocate memory for a new node.
     cmdnode_t *newNode = malloc(sizeof(cmdnode_t));
 
@@ -64,8 +97,22 @@ void *eps_cmdq_enqueue(uint8_t value[])
         return NULL;
     }
 
-    // Initialize the values of newNode.
-    newNode->cmd = value;
+    // Allocate memory for a return value array.
+    int* retval = (int*)malloc(nCmds * sizeof(int));
+
+    // Check if malloc was successful.
+    if (retval == NULL)
+    {
+        perror("Unable to allocate memory to return value array!");
+        return NULL;
+    }
+
+    // Point newNode's retval pointer to the start of our retval array memory.
+    newNode->retval = retval;
+
+    // Initialize the values of newNode by setting ->cmd to our args array, 
+    // and ->next to NULL.
+    newNode->cmd = args;
     newNode->next = NULL;
 
     // If the queue->tail already exists, set it's next to the
@@ -87,14 +134,22 @@ void *eps_cmdq_enqueue(uint8_t value[])
         globalCmdQ->head = newNode;
     }
 
+    //// Enqueueing has completed. ////
+
+    // Wait until the command has been executed, then return.
     static struct timespec twait = {.tv_sec = EPS_CMD_TIMEOUT, .tv_nsec = 0};
     newNode->wakeup = eps_cmd_wait;
     pthread_cond_timedwait(eps_cmd_wait, eps_cmd_wait_m, &twait);
 
-    retval = newNode->retval;
+    // Create a pointer to an integer or integer array and set it equal to
+    // newNode's retval (which, itself, is a pointer) so we can free newNode.
+    // int* retval = newNode->retval;
+    // We don't need to do this anymore since we still have the original 
+    // int pointer when we malloc'ed it.
 
     free(newNode);
-    // Return pointer to where the return value will be.
+
+    // Return pointer to where the return value / array is.
     return retval;
 }
 
@@ -129,7 +184,8 @@ cmdnode_t *eps_cmdq_dequeue()
 // Dequeues the top next command, executes it, and frees the memory.
 int eps_cmdq_execute()
 {
-    int retval = 1;
+    nCmds = node->cmd[0];
+
     cmdnode_t *node = eps_cmdq_dequeue();
 
     if (node == NULL)
@@ -138,32 +194,42 @@ int eps_cmdq_execute()
         return -1;
     }
 
-    switch (node->cmd[0])
-    {
-    case 0: // ping
-        node->retval = eps_p31u_ping(eps);
-        break;
-    case 1: // reboot
-        node->retval = eps_p31u_reboot(eps);
-        break;
-    case 2: // toggle latch
-        node->retval = eps_p31u_tgl_lup(eps, node->cmd[1]);
-        break;
-    case 3: // set latch
-        node->retval = eps_p31u_lup_set(eps, node->cmd[1], node->cmd[2]);
-        break;
-    default: // error
-        perror("Error: Default case reached in eps_cmdq_execute()!");
-        retval = -1;
+    // i tracks the current command number
+    // k tracks the current arguments number
+    // Note: cmd[0] is nCmds, not an actual command argument.
+    int i = 0, k = 1;
+
+    // Find what command this node holds and execute it.
+    // The while loop ensures that if the command is a multi-command,
+    // we successfully execute all commands in the multi-command.
+    while(i<nCmds){
+        switch(node->cmd[k]){
+            case 0: // ping
+                retval[i]=eps_p31u_ping(eps);
+                i++; // completed a command
+                k++; // ping has one argument
+                break;
+            case 1: // reboot
+                retval[i]=eps_p31u_reboot(eps);
+                i++; 
+                k++;
+                break;
+            case 2: // latch toggle
+                retval[i]=eps_p31u_tgl_lup(eps, node->cmd[k+1]);
+                i++; 
+                k+=2; // ltgl has 2 arguments
+                break;
+            case 3: // latch set
+                retval[i] = eps_p31u_lup_set(eps, node->cmd[k+1], node->cmd[k+2]);
+                i++; 
+                k+=3; // lset has 3 arguments
+                break;
+            default: // error
+                perror("Error: Default case reached in eps_cmdq_execute()!");
+                retval = -1;
+        }
     }
 
-    // The command has been executed and its return value has been placed
-    // in memory at the corresponding globalReturnQueue->head->retval.
-    // This particular return node can be removed and freed, and the
-    // location in memory is still accessible by the calling function.
-    // eps_retq_remove();
-
-    // free(node);
     pthread_cond_signal(node->wakeup);
     return retval;
 }
