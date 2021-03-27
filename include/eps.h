@@ -19,17 +19,28 @@
 
 #define EPS_CMD_TIMEOUT 5
 
+#define EPS_CMD_PING 0
+#define EPS_CMD_REBOOT 1
+#define EPS_CMD_TLUP 2
+#define EPS_CMD_SLUP 3
+
 /**
- * @brief Node object for the return queue.
+ * @brief Command type for enqueuing.
  *
- * retval: Points to where the corresponding command will place its return value.
- * next: Points to the next RetNode in the queue.
- *
+ * nCmds:       Number of commands.
+ * cmds:        Array of commands where each is a single integer, i.e. EPS_CMD_PING.
+ * nCmdArgs:    Array of the number of command arguments per command.
+ *              i.e. nCmdArgs[i] is the number of arguments for command cmds[i].
+ * cmdArgs:     A 2-dimensional array of command arguments.
+ *              i.e. cmdArgs[i][k] is the k'th argument of the command cmds[i].
+ * 
  */
-typedef struct RetNode {
-    void* retval;
-    struct RedNode* next;
-} retnode_t;
+typedef struct Command {
+    int nCmds;
+    int* cmds;
+    int* nCmdArgs; 
+    int** cmdArgs; 
+} command_t;
 
 /**
  * @brief Node object for the command queue.
@@ -40,7 +51,7 @@ typedef struct RetNode {
  *
  */
 typedef struct CmdNode {
-    uint8_t* cmd;
+    command_t* cmd;
     pthread_cond_t *wakeup;
     struct CmdNode* next;
     int* retval;
@@ -56,17 +67,6 @@ typedef struct CmdQ {
     uint8_t size;
     const uint8_t maxSize; // maxSize = 255
 } cmdq_t;
-
-/**
- * @brief Queue which holds EPS command return values.
- *
- */
-typedef struct RetQ {
-    retnode_t* head;
-    retnode_t* tail;
-    uint8_t size;
-    const uint8_t maxSize; // maxSize = 255
-} retq_t;
 
 /**
  * @brief Adds a command to the queue.
