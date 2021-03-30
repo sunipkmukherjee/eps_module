@@ -73,7 +73,7 @@ typedef struct CmdQ {
  *
  * @return Pointer to a location which will hold the return value on execution.
  */
-void* eps_cmdq_enqueue(uint8_t value[]);
+int eps_cmdq_enqueue(command_t *);
 
 /**
  * @brief Returns and removes the next command in the queue.
