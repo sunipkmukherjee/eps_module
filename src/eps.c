@@ -50,7 +50,7 @@ __thread pthread_mutex_t eps_cmd_wait_m[1];
 // Execute will treat a multi-command as multiple, adjacent commands, and will
 // wait to return until an array can be constructed of all return values for the
 // multi-command.
-int* eps_cmdq_enqueue(command_t cmdRequest)
+int eps_cmdq_enqueue(command_t *cmdRequest)
 {
     // Allocate memory for a new node.
     cmdnode_t *newNode = malloc(sizeof(cmdnode_t));
@@ -145,36 +145,37 @@ int eps_cmdq_execute()
 {
     cmdnode_t *node = eps_cmdq_dequeue();
 
-    nCmds = node->cmd->nCmds;
-
     if (node == NULL)
     {
         perror("Dequeueing error!");
         return -1;
     }
 
+    int nCmds = node->cmd->nCmds;
+
+
     // i tracks the current command number
-    int i = 0
+    int i = 0, retval = 1;
 
     // Find what command this node holds and execute it.
     // The while loop ensures that if there are multiple commands,
     // we successfully execute all.
     while(i < nCmds){
-        switch(node->cmds[k]){
+        switch(node->cmd->cmds[i]){
             case EPS_CMD_PING:
-                retval[i]=eps_p31u_ping(eps);
+                node->retval[i]=eps_p31u_ping(eps);
                 i++; // completed a command
                 break;
             case EPS_CMD_REBOOT:
-                retval[i]=eps_p31u_reboot(eps);
+                node->retval[i]=eps_p31u_reboot(eps);
                 i++; 
                 break;
             case EPS_CMD_TLUP:
-                retval[i]=eps_p31u_tgl_lup(eps, node->cmd->cmdArgs[i][0]);
+                node->retval[i]=eps_p31u_tgl_lup(eps, node->cmd->cmdArgs[i][0]);
                 i++; 
                 break;
             case EPS_CMD_SLUP:
-                retval[i] = eps_p31u_lup_set(eps, node->cmd->cmdArgs[i][0], 
+                node->retval[i] = eps_p31u_lup_set(eps, node->cmd->cmdArgs[i][0], 
                                                 node->cmd->cmdArgs[i][1]);
                 i++; 
                 break;
