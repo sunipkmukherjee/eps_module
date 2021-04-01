@@ -179,6 +179,24 @@ int eps_cmdq_execute()
                                                 node->cmd->cmdArgs[i][1]);
                 i++; 
                 break;
+            case EPS_CMD_HARDRESET:
+                node->retval[i] = eps_p31u_hardreset(eps);
+                i++;
+                break;
+            // TODO: How to deal with HK argument? Its a pointer to a 
+            // hkparam_t which is many ints...
+            // Could accept n-many ints and then construct the hkparam_t here.
+            // Update: Should probably be fine since its a pointer to an int
+            case EPS_CMD_GET_HK:
+                node->retval[i] = eps_p31u_get_hk(dev,
+                                                node->cmd->cmdArgs[i][0]);
+                i++;
+                break;
+            case EPS_CMD_GET_HK_OUT:
+                node->retval[i] = eps_p31u_get_hk_out(eps, 
+                                                node->cmd->cmdArgs[i][0]);
+                i++;
+                break;
             default: // error
                 perror("Error: Default case reached in eps_cmdq_execute()!");
                 retval = -1;
@@ -272,3 +290,142 @@ void eps_destroy()
     eps_p31u_destroy(eps);
     free(eps);
 }
+
+#ifndef EPS_UNIT_TEST
+#include <stdio.h>
+
+int main(){
+    // Command type initialization.
+    command_t* commandRequest = (command_t*)malloc(sizeof(command_t));
+
+    // EPS Initialization
+    p31u eps[1];
+    eps_p31u_init(eps, 0, 0x1b);
+
+    // Ping EPS
+    eps_p31u_ping(eps);
+
+    // One-time printouts
+    printf("Unit Test Program for EPS Module\n");
+    printf("********************************\n")
+    printf("\n");
+    printf("Valid Commands\n");
+    printf("0: Ping\n");
+    printf("1: Reboot\n");
+    printf("2: Toggle LUP\n");
+    printf("3: Set LUP\n");
+    printf("4: Hard Reset\n");
+    printf("5: Get HK\n");
+    printf("6: Get HK Out\n");
+    printf("\n");
+
+    // The command input.
+    int inCommand = -1;
+    // The command's arguments (if any) will be stored in this array.
+    int* inArgs = (int*)malloc(sizeof(int));
+
+    while (!done){
+        printf("Please enter a valid command...\n");
+        printf("> ");
+        
+        inCommand = getchar();
+
+        switch(inCommand){
+            case EPS_CMD_PING:
+                // Set the commandRequest values
+                commandRequest.nCmds = 1;
+                commandRequest.cmds = {EPS_CMD_PING};
+                commandRequest.nCmdArgs = {0};
+                commandRequest.cmdArgs = {{NULL}};
+
+                break;
+            case EPS_CMD_REBOOT:
+                // Set the commandRequest values
+                commandRequest.nCmds = 1;
+                commandRequest.cmds = {EPS_CMD_REBOOT};
+                commandRequest.nCmdArgs = {0};
+                commandRequest.cmdArgs = {{NULL}};
+
+                break;
+            case EPS_CMD_TLUP:
+                // Set the commandRequest values
+                commandRequest.nCmds = 1;
+                commandRequest.cmds = {EPS_CMD_TLUP};
+                commandRequest.nCmdArgs = {1};
+
+                // Grab command arguments.
+                printf("Enter one argument for EPS_CMD_TLUP: ");
+                inArgs[0] = getchar();
+
+                commandRequest.cmdArgs = {{inArgs[0]}};
+
+                break;
+            case EPS_CMD_SLUP:
+                // Set the commandRequest values
+                commandRequest.nCmds = 1;
+                commandRequest.cmds = {EPS_CMD_SLUP};
+                commandRequest.nCmdArgs = {2};
+
+                // Resize the inArgs array to hold both inputs.
+                inArgs = (int*)realloc(inArgs, sizeof(int))
+
+                // Grab command arguments.
+                for(int i = 0; i < 2; i++){
+                    printf("Enter argument %d for EPS_CMD_SLUP: ");
+                    inArgs[i] = getchar();
+                }
+
+                commandRequest.cmdArgs = {{inArgs[0], inArgs[1]}};
+
+                break;
+            case EPS_CMD_HARDRESET:
+                // Set the commandRequest values
+                commandRequest.nCmds = 1;
+                commandRequest.cmds = {EPS_CMD_HARDRESET};
+                commandRequest.nCmdArgs = {0};
+                commandRequest.cmdArgs = {{NULL}};
+
+                break;
+            case EPS_CMD_GET_HK:
+                // Set the commandRequest values
+                commandRequest.nCmds = 1;
+                commandRequest.cmds = {EPS_CMD_GET_HK};
+                commandRequest.nCmdArgs = {1};
+
+                // Grab command arguments.
+                printf("Enter one argument for EPS_CMD_GET_HK: ");
+                inArgs[0] = getchar();
+
+                commandRequest.cmdArgs = {{inArgs[0]}};
+
+                break;
+            case EPS_CMD_GET_HK_OUT:
+                // Set the commandRequest values
+                commandRequest.nCmds = 1;
+                commandRequest.cmds = {EPS_CMD_GET_HK_OUT};
+                commandRequest.nCmdArgs = {1};
+
+                // Grab command arguments.
+                printf("Enter one argument for EPS_CMD_GET_HK_OUT: ");
+                inArgs[0] = getchar();
+
+                commandRequest.cmdArgs = {{inArgs[0]}};
+
+                break;
+            default:
+
+                printf("Error: Invalid input.");
+
+                break;
+        }
+
+        // Send the command.
+        int* returnValue = eps_cmdq_enqueue(commandRequest);
+        
+        free(commandRequest);
+        free(inArgs);
+    }
+
+}
+
+#endif

@@ -23,6 +23,9 @@
 #define EPS_CMD_REBOOT 1
 #define EPS_CMD_TLUP 2
 #define EPS_CMD_SLUP 3
+#define EPS_CMD_HARDRESET 4
+#define EPS_CMD_GET_HK 5
+#define EPS_CMD_GET_HK_OUT 6
 
 /**
  * @brief Command type for enqueuing.
