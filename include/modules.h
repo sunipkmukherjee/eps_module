@@ -45,7 +45,7 @@ const int num_destroy = sizeof(module_destroy) / sizeof(destroy_func);
  */
 void *module_exec[] = {
     eps_thread,
-    eps_test,
+    //eps_test,
 };
 /**
  * @brief Number of enabled modules

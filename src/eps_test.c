@@ -5,7 +5,7 @@
 
 void *eps_test(void *tid)
 {
-        // Command type initialization.
+    // Command type initialization.
     command_t *commandRequest = (command_t *)malloc(sizeof(command_t));
 
     // One-time printouts
@@ -78,6 +78,7 @@ void *eps_test(void *tid)
             commandRequest->cmds[0] = inCommand;
             commandRequest->nCmdArgs = (int *)malloc(commandRequest->nCmds * sizeof(int));
             commandRequest->nCmdArgs[0] = 2;
+            // ! Should this be ->nCmdArgs instead of ->nCmds?
             commandRequest->cmdArgs = (int **)malloc(commandRequest->nCmds * sizeof(int *));
             for (int i = 0; i < commandRequest->nCmds; i++)
                 commandRequest->cmdArgs[i] = (int*)malloc(commandRequest->nCmdArgs[i] * sizeof(int));
@@ -138,7 +139,6 @@ void *eps_test(void *tid)
                 show_hkout();
         }
     }
-    /// !
-    //free(commandRequest);
+    free(commandRequest);
     return 0;
 }
