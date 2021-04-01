@@ -14,9 +14,34 @@
 
 #include <pthread.h>
 #include <stdarg.h>
-extern __thread pthread_cond_t *eps_cmd_wait;
-extern __thread pthread_mutex_t *eps_cmd_wait_m;
-#ifndef EPS_IFACE_H
+#ifndef EPS_H
+extern __thread pthread_cond_t eps_cmd_wait[1];
+extern __thread pthread_mutex_t eps_cmd_wait_m[1];
+#endif
+#define EPS_CMD_PING 0
+#define EPS_CMD_REBOOT 1
+#define EPS_CMD_TLUP 2
+#define EPS_CMD_SLUP 3
+#define EPS_CMD_HARDRESET 4
+#define EPS_CMD_GET_HK 5
+#define EPS_CMD_GET_HK_OUT 6
+/**
+ * @brief Command type for enqueuing.
+ *
+ * nCmds:       Number of commands.
+ * cmds:        Array of commands where each is a single integer, i.e. EPS_CMD_PING.
+ * nCmdArgs:    Array of the number of command arguments per command.
+ *              i.e. nCmdArgs[i] is the number of arguments for command cmds[i].
+ * cmdArgs:     A 2-dimensional array of command arguments.
+ *              i.e. cmdArgs[i][k] is the k'th argument of the command cmds[i].
+ * 
+ */
+typedef struct Command {
+    int nCmds;
+    int* cmds;
+    int* nCmdArgs; 
+    int** cmdArgs; 
+} command_t;
 
  /**
   * @brief Enters a command into the queue for execution.
@@ -30,8 +55,14 @@ extern __thread pthread_mutex_t *eps_cmd_wait_m;
   * @param value An array of uint8_t to determine the command and its arguments.
   * @return int Return value for i2c read/write
   */
-void* eps_cmdq_enqueue(uint8_t value[]);
+int eps_cmdq_enqueue(command_t *);
 
-#endif // EPS_IFACE_H
+int *get_hk_ptr();
+
+int *get_hkout_ptr();
+
+void show_hk();
+
+void show_hkout();
 
 #endif // EPS_EXTERN_H

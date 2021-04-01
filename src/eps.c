@@ -9,8 +9,8 @@
  *
  */
 
-#include <p31u.h>
-#include <eps.h>
+#include "eps_p31u/p31u.h"
+#include "eps.h"
 #include <main.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -59,22 +59,22 @@ int eps_cmdq_enqueue(command_t *cmdRequest)
     if (newNode == NULL)
     {
         perror("Unable to allocate memory to enqueue command queue!");
-        return NULL;
+        return -1;
     }
 
-    // Initialize the values of newNode by setting ->cmd to our args array, 
+    // Initialize the values of newNode by setting ->cmd to our args array,
     // and ->next to NULL.
     newNode->cmd = cmdRequest;
     newNode->next = NULL;
 
     // Allocate memory for a return value array.
-    int* retval = (int*)malloc(newNode->cmd->nCmds * sizeof(int));
+    int *retval = (int *)malloc(newNode->cmd->nCmds * sizeof(int));
 
     // Check if malloc was successful.
     if (retval == NULL)
     {
         perror("Unable to allocate memory to return value array!");
-        return NULL;
+        return -1;
     }
 
     // Point newNode's retval pointer to the start of our retval array memory.
@@ -153,53 +153,53 @@ int eps_cmdq_execute()
 
     int nCmds = node->cmd->nCmds;
 
-
     // i tracks the current command number
     int i = 0, retval = 1;
 
     // Find what command this node holds and execute it.
     // The while loop ensures that if there are multiple commands,
     // we successfully execute all.
-    while(i < nCmds){
-        switch(node->cmd->cmds[i]){
-            case EPS_CMD_PING:
-                node->retval[i]=eps_p31u_ping(eps);
-                i++; // completed a command
-                break;
-            case EPS_CMD_REBOOT:
-                node->retval[i]=eps_p31u_reboot(eps);
-                i++; 
-                break;
-            case EPS_CMD_TLUP:
-                node->retval[i]=eps_p31u_tgl_lup(eps, node->cmd->cmdArgs[i][0]);
-                i++; 
-                break;
-            case EPS_CMD_SLUP:
-                node->retval[i] = eps_p31u_lup_set(eps, node->cmd->cmdArgs[i][0], 
-                                                node->cmd->cmdArgs[i][1]);
-                i++; 
-                break;
-            case EPS_CMD_HARDRESET:
-                node->retval[i] = eps_p31u_hardreset(eps);
-                i++;
-                break;
-            // TODO: How to deal with HK argument? Its a pointer to a 
-            // hkparam_t which is many ints...
-            // Could accept n-many ints and then construct the hkparam_t here.
-            // Update: Should probably be fine since its a pointer to an int
-            case EPS_CMD_GET_HK:
-                node->retval[i] = eps_p31u_get_hk(dev,
-                                                node->cmd->cmdArgs[i][0]);
-                i++;
-                break;
-            case EPS_CMD_GET_HK_OUT:
-                node->retval[i] = eps_p31u_get_hk_out(eps, 
-                                                node->cmd->cmdArgs[i][0]);
-                i++;
-                break;
-            default: // error
-                perror("Error: Default case reached in eps_cmdq_execute()!");
-                retval = -1;
+    while (i < nCmds)
+    {
+        switch (node->cmd->cmds[i])
+        {
+        case EPS_CMD_PING:
+            node->retval[i] = eps_p31u_ping(eps);
+            i++; // completed a command
+            break;
+        case EPS_CMD_REBOOT:
+            node->retval[i] = eps_p31u_reboot(eps);
+            i++;
+            break;
+        case EPS_CMD_TLUP:
+            node->retval[i] = eps_p31u_tgl_lup(eps, node->cmd->cmdArgs[i][0]);
+            i++;
+            break;
+        case EPS_CMD_SLUP:
+            node->retval[i] = eps_p31u_lup_set(eps, node->cmd->cmdArgs[i][0],
+                                               node->cmd->cmdArgs[i][1]);
+            i++;
+            break;
+        case EPS_CMD_HARDRESET:
+            node->retval[i] = eps_p31u_hardreset(eps);
+            i++;
+            break;
+        // TODO: How to deal with HK argument? Its a pointer to a
+        // hkparam_t which is many ints...
+        // Could accept n-many ints and then construct the hkparam_t here.
+        // Update: Should probably be fine since its a pointer to an int
+        case EPS_CMD_GET_HK:
+            node->retval[i] = eps_p31u_get_hk(eps, (hkparam_t *)node->cmd->cmdArgs[i]);
+            i++;
+            break;
+        case EPS_CMD_GET_HK_OUT:
+            node->retval[i] = eps_p31u_get_hk_out(eps,
+                                                  (eps_hk_out_t *)node->cmd->cmdArgs[i]);
+            i++;
+            break;
+        default: // error
+            perror("Error: Default case reached in eps_cmdq_execute()!");
+            retval = -1;
         }
     }
 
@@ -228,7 +228,7 @@ int eps_init()
     if (eps == NULL)
     {
         perror("Unable to allocate memory for eps object!");
-        return NULL;
+        return -1;
     }
 
     commandQueue = (cmdq_t *)malloc(sizeof(cmdq_t));
@@ -237,7 +237,7 @@ int eps_init()
     if (commandQueue == NULL)
     {
         perror("Unable to allocate memory for command queue!");
-        return NULL;
+        return -1;
     }
 
     // Initializes the EPS component while checking if successful.
@@ -291,141 +291,77 @@ void eps_destroy()
     free(eps);
 }
 
+static hkparam_t hkdata[1];
+static eps_hk_out_t hkout[1];
+
+int *get_hk_ptr()
+{
+    return (int *)hkdata;
+}
+
+int *get_hkout_ptr()
+{
+    return (int *)hkout;
+}
+
 #ifndef EPS_UNIT_TEST
 #include <stdio.h>
 
-int main(){
-    // Command type initialization.
-    command_t* commandRequest = (command_t*)malloc(sizeof(command_t));
+void print_hk(hkparam_t *hk)
+{
+    printf("Photovoltaic voltage (mV):");
+    for (int i = 0; i < 3; i++)
+        printf(" %u", (hk->pv[i]));
+    printf("\nTotal photo current [mA]: %u", (hk->pc));
+    printf("\nBattery voltage [mV]: %u", (hk->bv));
+    printf("\nTotal system current [mA]: %u", (hk->sc));
+    printf("\nTemp of boost converters and onboard batt (C):");
+    for (int i = 0; i < 4; i++)
+        printf(" %d", (hk->temp[i]));
+    printf("\nExternal board batt (C):");
+    for (int i = 0; i < 2; i++)
+        printf(" %d", (hk->batt_temp[i]));
+    printf("\nNumber of latchups:");
+    for (int i = 0; i < 6; i++)
+        printf(" %u", (hk->latchup[i]));
+    printf("\nCause of last reset: 0x%02x", hk->reset);
+    printf("\nNumber of reboots: %u", (hk->bootcount));
+    printf("\nSoftware errors: %u", (hk->sw_errors));
+    printf("\nPPT mode: %u", hk->ppt_mode);
+    printf("\nChannel status: %u", hk->channel_status);
+    printf("\n\n");
+}
 
-    // EPS Initialization
-    p31u eps[1];
-    eps_p31u_init(eps, 0, 0x1b);
+void print_hk_out(eps_hk_out_t *hk_out)
+{
+    printf("LUP currents: ");
+    for (int i = 0; i < 6; i++)
+        printf("%u ", (hk_out->curout[i]));
+    printf("\nLUP status: ");
+    for (int i = 0; i < 8; i++)
+        printf("%01x ", (hk_out->output[i]));
+    printf("\nLUP on delay [s]: ");
+    for (int i = 0; i < 8; i++)
+        printf("%u ", (hk_out->output_on_delta[i]));
+    printf("\nLUP off delay [s]: ");
+    for (int i = 0; i < 8; i++)
+        printf("%u ", (hk_out->output_off_delta[i]));
+    printf("\nNumber of LUPs: ");
+    for (int i = 0; i < 6; i++)
+        printf("%u ", (hk_out->latchup[i]));
+    printf("\n\n");
+}
 
-    // Ping EPS
-    eps_p31u_ping(eps);
+void show_hk()
+{
+    print_hk(hkdata);
+    fflush(stdout);
+}
 
-    // One-time printouts
-    printf("Unit Test Program for EPS Module\n");
-    printf("********************************\n")
-    printf("\n");
-    printf("Valid Commands\n");
-    printf("0: Ping\n");
-    printf("1: Reboot\n");
-    printf("2: Toggle LUP\n");
-    printf("3: Set LUP\n");
-    printf("4: Hard Reset\n");
-    printf("5: Get HK\n");
-    printf("6: Get HK Out\n");
-    printf("\n");
-
-    // The command input.
-    int inCommand = -1;
-    // The command's arguments (if any) will be stored in this array.
-    int* inArgs = (int*)malloc(sizeof(int));
-
-    while (!done){
-        printf("Please enter a valid command...\n");
-        printf("> ");
-        
-        inCommand = getchar();
-
-        switch(inCommand){
-            case EPS_CMD_PING:
-                // Set the commandRequest values
-                commandRequest.nCmds = 1;
-                commandRequest.cmds = {EPS_CMD_PING};
-                commandRequest.nCmdArgs = {0};
-                commandRequest.cmdArgs = {{NULL}};
-
-                break;
-            case EPS_CMD_REBOOT:
-                // Set the commandRequest values
-                commandRequest.nCmds = 1;
-                commandRequest.cmds = {EPS_CMD_REBOOT};
-                commandRequest.nCmdArgs = {0};
-                commandRequest.cmdArgs = {{NULL}};
-
-                break;
-            case EPS_CMD_TLUP:
-                // Set the commandRequest values
-                commandRequest.nCmds = 1;
-                commandRequest.cmds = {EPS_CMD_TLUP};
-                commandRequest.nCmdArgs = {1};
-
-                // Grab command arguments.
-                printf("Enter one argument for EPS_CMD_TLUP: ");
-                inArgs[0] = getchar();
-
-                commandRequest.cmdArgs = {{inArgs[0]}};
-
-                break;
-            case EPS_CMD_SLUP:
-                // Set the commandRequest values
-                commandRequest.nCmds = 1;
-                commandRequest.cmds = {EPS_CMD_SLUP};
-                commandRequest.nCmdArgs = {2};
-
-                // Resize the inArgs array to hold both inputs.
-                inArgs = (int*)realloc(inArgs, sizeof(int))
-
-                // Grab command arguments.
-                for(int i = 0; i < 2; i++){
-                    printf("Enter argument %d for EPS_CMD_SLUP: ");
-                    inArgs[i] = getchar();
-                }
-
-                commandRequest.cmdArgs = {{inArgs[0], inArgs[1]}};
-
-                break;
-            case EPS_CMD_HARDRESET:
-                // Set the commandRequest values
-                commandRequest.nCmds = 1;
-                commandRequest.cmds = {EPS_CMD_HARDRESET};
-                commandRequest.nCmdArgs = {0};
-                commandRequest.cmdArgs = {{NULL}};
-
-                break;
-            case EPS_CMD_GET_HK:
-                // Set the commandRequest values
-                commandRequest.nCmds = 1;
-                commandRequest.cmds = {EPS_CMD_GET_HK};
-                commandRequest.nCmdArgs = {1};
-
-                // Grab command arguments.
-                printf("Enter one argument for EPS_CMD_GET_HK: ");
-                inArgs[0] = getchar();
-
-                commandRequest.cmdArgs = {{inArgs[0]}};
-
-                break;
-            case EPS_CMD_GET_HK_OUT:
-                // Set the commandRequest values
-                commandRequest.nCmds = 1;
-                commandRequest.cmds = {EPS_CMD_GET_HK_OUT};
-                commandRequest.nCmdArgs = {1};
-
-                // Grab command arguments.
-                printf("Enter one argument for EPS_CMD_GET_HK_OUT: ");
-                inArgs[0] = getchar();
-
-                commandRequest.cmdArgs = {{inArgs[0]}};
-
-                break;
-            default:
-
-                printf("Error: Invalid input.");
-
-                break;
-        }
-
-        // Send the command.
-        int* returnValue = eps_cmdq_enqueue(commandRequest);
-        
-        free(commandRequest);
-        free(inArgs);
-    }
-
+void show_hkout()
+{
+    print_hk_out(hkout);
+    fflush(stdout);
 }
 
 #endif
