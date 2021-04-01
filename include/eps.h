@@ -12,38 +12,13 @@
 #ifndef EPS_H
 #define EPS_H
 
-#include <eps_extern.h>
-#include <eps_iface.h>
+#include "eps_extern.h"
+#include "eps_iface.h"
 #include <stdbool.h>
 #include <stdint.h>
 
 #define EPS_CMD_TIMEOUT 5
 
-#define EPS_CMD_PING 0
-#define EPS_CMD_REBOOT 1
-#define EPS_CMD_TLUP 2
-#define EPS_CMD_SLUP 3
-#define EPS_CMD_HARDRESET 4
-#define EPS_CMD_GET_HK 5
-#define EPS_CMD_GET_HK_OUT 6
-
-/**
- * @brief Command type for enqueuing.
- *
- * nCmds:       Number of commands.
- * cmds:        Array of commands where each is a single integer, i.e. EPS_CMD_PING.
- * nCmdArgs:    Array of the number of command arguments per command.
- *              i.e. nCmdArgs[i] is the number of arguments for command cmds[i].
- * cmdArgs:     A 2-dimensional array of command arguments.
- *              i.e. cmdArgs[i][k] is the k'th argument of the command cmds[i].
- * 
- */
-typedef struct Command {
-    int nCmds;
-    int* cmds;
-    int* nCmdArgs; 
-    int** cmdArgs; 
-} command_t;
 
 /**
  * @brief Node object for the command queue.
@@ -97,37 +72,5 @@ int eps_cmdq_execute();
  *
  */
 void eps_cmdq_destroy();
-
-/**
- * @brief Allocates a space for the eventual return value in the return queue.
- *
- * Similar to enqueue.
- *
- * @return Returns a pointer to a retnode_t object.
- */
-retnode_t* eps_retq_allocate();
-
-/**
- * @brief Removes and frees the head node from the queue, setting a new head.
- *
- * This function detaches the head node from the queue and frees it.
- * It should be called whenever a command is executed (or removed for
- * whatever reason). It does not free() the node's pointer to the
- * return value in memory, void* retval, because that would prevent
- * whomever queued the command from accessing their return value. The
- * return value memory must be free()'d by the original caller.
- *
- * eps_req_remove's return value is typically only used by eps_retq_destroy().
- *
- * @return Returns a pointer to the void pointer to the command's return value.
- */
-void* eps_retq_remove();
-
-/**
- * @brief Destroys / frees the entire return queue.
- *
- */
-void eps_retq_destroy();
-
 
 #endif // EPS_H

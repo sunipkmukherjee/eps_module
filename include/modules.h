@@ -13,7 +13,8 @@
 #define __SH_MODULES_H
 #ifdef MAIN_PRIVATE
 #include <pthread.h>
-#include <eps_iface.h>
+#include "eps_iface.h"
+#include "eps_test_iface.h"
 typedef int (*init_func)(void);     // typedef to create array of init functions
 typedef void (*destroy_func)(void); // typedef to create array of destroy functions
 
@@ -44,6 +45,7 @@ const int num_destroy = sizeof(module_destroy) / sizeof(destroy_func);
  */
 void *module_exec[] = {
     eps_thread,
+    eps_test,
 };
 /**
  * @brief Number of enabled modules
