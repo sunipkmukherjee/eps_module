@@ -78,6 +78,7 @@ int eps_cmdq_enqueue(command_t *cmdRequest)
     }
 
     // Point newNode's retval pointer to the start of our retval array memory.
+    /// ! When we free newNode, would it also free retval itself?
     newNode->retval = retval;
 
     // If the queue->tail already exists, set it's next to the
@@ -143,6 +144,7 @@ cmdnode_t *eps_cmdq_dequeue()
 // Dequeues the top next command, executes it, and frees the memory.
 int eps_cmdq_execute()
 {
+
     cmdnode_t *node = eps_cmdq_dequeue();
 
     if (node == NULL)

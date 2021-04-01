@@ -138,6 +138,7 @@ void *eps_test(void *tid)
                 show_hkout();
         }
     }
-    free(commandRequest);
+    /// !
+    //free(commandRequest);
     return 0;
 }
