@@ -222,6 +222,8 @@ void eps_cmdq_destroy()
 // int eps_onAwake(){}
 int eps_init()
 {
+    return;
+
     //#ifdef EPS_Init
 
     eps = (p31u *)malloc(sizeof(p31u));
@@ -232,8 +234,6 @@ int eps_init()
         perror("Unable to allocate memory for eps object!");
         return -1;
     }
-
-    printf("Test output.\n");
 
     commandQueue = (cmdq_t *)malloc(sizeof(cmdq_t));
 
