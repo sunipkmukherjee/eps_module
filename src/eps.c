@@ -220,6 +220,8 @@ void eps_cmdq_destroy()
 
 // Initializes the EPS and ping-tests it.
 // int eps_onAwake(){}
+/// ! Segmentation fault is somewhere in this eps_init function - "Done init modules" printout
+/// ! doesn't show up.
 int eps_init()
 {
     //#ifdef EPS_Init

@@ -22,7 +22,7 @@ typedef void (*destroy_func)(void); // typedef to create array of destroy functi
  * @brief Registers init functions of a given module
  */
 init_func module_init[] = {
-    //eps_init,
+    eps_init,
     };
 /**
  * @brief Number of modules with an associated init function
@@ -44,8 +44,8 @@ const int num_destroy = sizeof(module_destroy) / sizeof(destroy_func);
  * @brief Registers exec functions of a given module
  */
 void *module_exec[] = {
-    //eps_thread,
-    //eps_test,
+    eps_thread,
+    eps_test,
 };
 /**
  * @brief Number of enabled modules
