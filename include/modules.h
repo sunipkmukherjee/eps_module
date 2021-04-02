@@ -22,7 +22,7 @@ typedef void (*destroy_func)(void); // typedef to create array of destroy functi
  * @brief Registers init functions of a given module
  */
 init_func module_init[] = {
-    eps_init,
+    //eps_init,
     };
 /**
  * @brief Number of modules with an associated init function
