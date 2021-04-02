@@ -233,6 +233,8 @@ int eps_init()
         return -1;
     }
 
+    printf("Test output.\n");
+
     commandQueue = (cmdq_t *)malloc(sizeof(cmdq_t));
 
     // Check if malloc was successful.
@@ -274,7 +276,7 @@ void *eps_thread(void *tid)
         eps_reset_wdt(eps);
 
         // Execute a command.
-        //eps_cmdq_execute();
+        eps_cmdq_execute();
     }
 
     pthread_exit(NULL);
