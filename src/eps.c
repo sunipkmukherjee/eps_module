@@ -274,14 +274,14 @@ void *eps_thread(void *tid)
         eps_reset_wdt(eps);
 
         // Execute a command.
-        eps_cmdq_execute();
+        //eps_cmdq_execute();
     }
 
     pthread_exit(NULL);
 }
 
 // Frees eps memory and destroys the EPS object.
-// void eps_onShutdown(p31u* eps){}
+// void eps_onShutdown(){...}
 void eps_destroy()
 {
     // Destroy / free command queue.
