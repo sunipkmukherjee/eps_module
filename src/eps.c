@@ -222,8 +222,6 @@ void eps_cmdq_destroy()
 // int eps_onAwake(){}
 int eps_init()
 {
-    return;
-
     //#ifdef EPS_Init
 
     eps = (p31u *)malloc(sizeof(p31u));

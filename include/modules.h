@@ -44,7 +44,7 @@ const int num_destroy = sizeof(module_destroy) / sizeof(destroy_func);
  * @brief Registers exec functions of a given module
  */
 void *module_exec[] = {
-    eps_thread,
+    //eps_thread,
     //eps_test,
 };
 /**
