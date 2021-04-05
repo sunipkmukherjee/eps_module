@@ -18,6 +18,7 @@
 #include <stdint.h>
 
 #define EPS_CMD_TIMEOUT 5
+#define EPS_LOOP_TIMER 1 # seconds
 
 
 /**

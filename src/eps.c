@@ -118,7 +118,7 @@ cmdnode_t *eps_cmdq_dequeue()
     // Check if the queue is empty, and return an error if so.
     if (commandQueue->head == NULL)
     {
-        perror("Cannot dequeue an empty command queue!");
+        // perror("Cannot dequeue an empty command queue!");
         return NULL;
     }
 
@@ -149,7 +149,7 @@ int eps_cmdq_execute()
 
     if (node == NULL)
     {
-        perror("Dequeueing error!");
+        // perror("Dequeueing error!");
         return -1;
     }
 
@@ -200,7 +200,7 @@ int eps_cmdq_execute()
             i++;
             break;
         default: // error
-            perror("Error: Default case reached in eps_cmdq_execute()!");
+            // perror("Error: Default case reached in eps_cmdq_execute()!");
             retval = -1;
         }
     }
@@ -294,6 +294,7 @@ void *eps_thread(void *tid)
 
         // Execute a command.
         eps_cmdq_execute();
+        sleep(EPS_LOOP_TIMER);
     }
 
     pthread_exit(NULL);
