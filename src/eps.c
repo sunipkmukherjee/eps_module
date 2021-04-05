@@ -223,35 +223,48 @@ void eps_cmdq_destroy()
 /// ! Segmentation fault is somewhere in this eps_init function - "Done init modules" printout doesn't show up.
 int eps_init()
 {
-    //#ifdef EPS_Init
-    while(1){
-        printf("F");
-    }
+    printf("eps_module/src/eps_init - DEBUG: Beginning initialization.\n");
+    fflush(stdout);
 
     eps = (p31u *)malloc(sizeof(p31u));
+
+    printf("eps_module/src/eps_init - DEBUG: Performed eps object malloc.\n");
+    fflush(stdout);
 
     // Check if malloc was successful.
     if (eps == NULL)
     {
-        perror("Unable to allocate memory for eps object!");
+        perror("Unable to allocate memory for eps object!\n");
         return -1;
     }
 
+    printf("eps_module/src/eps_init - DEBUG: eps object malloc confirmed successful.\n");
+    fflush(stdout);
+
     commandQueue = (cmdq_t *)malloc(sizeof(cmdq_t));
+
+    printf("eps_module/src/eps_init - DEBUG: Performed commandQueue object malloc.\n");
+    fflush(stdout);
 
     // Check if malloc was successful.
     if (commandQueue == NULL)
     {
-        perror("Unable to allocate memory for command queue!");
+        perror("Unable to allocate memory for command queue!\n");
         return -1;
     }
+
+    printf("eps_module/src/eps_init - DEBUG: commandQueue object malloc confirmed successful.\n");
+    fflush(stdout);
 
     // Initializes the EPS component while checking if successful.
     if (eps_p31u_init(eps, 1, 0x1b) <= 0)
     {
-        perror("EPS initialization failed!");
+        perror("EPS initialization failed!\n");
         return -1;
     }
+
+    printf("eps_module/src/eps_init - DEBUG: eps object initialization successful.\n");
+    fflush(stdout);
 
     // If we can't successfully ping the EPS then something has gone wrong.
     if (eps_p31u_ping(eps) < 0)
@@ -260,7 +273,9 @@ int eps_init()
         return -2;
     }
 
-    //#endif // EPS_Init
+    printf("eps_module/src/eps_init - DEBUG: eps object ping successful.\n");
+    printf("eps_module/src/eps_init - DEBUG: Initialization finished.\n");
+    fflush(stdout);
 }
 
 // Accepts the Thread ID from its caller (main.c)
