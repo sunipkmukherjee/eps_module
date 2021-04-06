@@ -17,6 +17,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <pthread.h>
+#include <unistd.h>
 
 /* Variable allocation for EPS */
 
