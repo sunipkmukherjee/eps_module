@@ -128,6 +128,7 @@ int eps_init()
     {
         return -2;
     }
+    return 1;
 }
 
 int eps_get_conf(eps_config_t *conf)
