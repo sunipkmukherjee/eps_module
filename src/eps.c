@@ -137,6 +137,7 @@ void *eps_thread(void *tid)
     {
         // Reset the watch-dog timer.
         eps_reset_wdt(eps);
+        sleep(EPS_LOOP_TIMER);
     }
 
     pthread_exit(NULL);
