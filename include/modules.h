@@ -23,7 +23,7 @@ typedef void (*destroy_func)(void); // typedef to create array of destroy functi
  */
 init_func module_init[] = {
     eps_init,
-    };
+};
 /**
  * @brief Number of modules with an associated init function
  */
@@ -34,7 +34,7 @@ const int num_init = sizeof(module_init) / sizeof(init_func);
  */
 destroy_func module_destroy[] = {
     eps_destroy,
-    };
+};
 /**
  * @brief Number of modules with an associated destroy function
  */
