@@ -84,6 +84,7 @@ void *eps_test(void *tid)
     printf("4: Hard Reset\n");
     printf("5: Get HK\n");
     printf("6: Get HK Out\n");
+    printf("^D: Quit\n");
     printf("\n");
 
     // The command input.
@@ -95,7 +96,8 @@ void *eps_test(void *tid)
         printf("> ");
 
         inCommand = getchar() - '0';
-
+        if (inCommand <= EOF)
+            break;
         switch (inCommand)
         {
         case EPS_CMD_PING:
@@ -150,6 +152,6 @@ void *eps_test(void *tid)
             break;
         }
     }
-
-    return 0;
+    done = 1;
+    return NULL;
 }
