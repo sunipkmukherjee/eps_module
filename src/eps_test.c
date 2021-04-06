@@ -94,7 +94,7 @@ void *eps_test(void *tid)
         printf("Please enter a valid command...\n");
         printf("> ");
 
-        inCommand = scanf(" %d", &inCommand);
+        inCommand = getchar() - '0';
 
         switch (inCommand)
         {
