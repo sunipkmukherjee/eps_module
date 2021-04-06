@@ -3,6 +3,73 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+/*
+Commands available externally:
+Ping
+Reboot
+Get HK
+Get HK Out
+Toggle LUP
+Set LUP
+Hard Reset
+*/
+
+#define EPS_CMD_PING 0
+#define EPS_CMD_REBOOT 1
+#define EPS_CMD_TLUP 2
+#define EPS_CMD_SLUP 3
+#define EPS_CMD_HARDRESET 4
+#define EPS_CMD_GET_HK 5
+#define EPS_CMD_GET_HK_OUT 6
+
+hkparam_t hk[1];
+eps_hk_out_t hkout[1];
+
+void print_hk(hkparam_t hk)
+{
+    printf("Photovoltaic voltage (mV):");
+    for (int i = 0; i < 3; i++)
+        printf(" %u", (hk.pv[i]));
+    printf("\nTotal photo current [mA]: %u", (hk.pc));
+    printf("\nBattery voltage [mV]: %u", (hk.bv));
+    printf("\nTotal system current [mA]: %u", (hk.sc));
+    printf("\nTemp of boost converters and onboard batt (C):");
+    for (int i = 0; i < 4; i++)
+        printf(" %d", (hk.temp[i]));
+    printf("\nExternal board batt (C):");
+    for (int i = 0; i < 2; i++)
+        printf(" %d", (hk.batt_temp[i]));
+    printf("\nNumber of latchups:");
+    for (int i = 0; i < 6; i++)
+        printf(" %u", (hk.latchup[i]));
+    printf("\nCause of last reset: 0x%02x", hk.reset);
+    printf("\nNumber of reboots: %u", (hk.bootcount));
+    printf("\nSoftware errors: %u", (hk.sw_errors));
+    printf("\nPPT mode: %u", hk.ppt_mode);
+    printf("\nChannel status: %u", hk.channel_status);
+    printf("\n\n");
+}
+
+void print_hk_out(eps_hk_out_t hk_out)
+{
+    printf("LUP currents: ");
+    for (int i = 0; i < 6; i++)
+        printf("%u ", (hk_out.curout[i]));
+    printf("\nLUP status: ");
+    for (int i = 0; i < 8; i++)
+        printf("%01x ", (hk_out.output[i]));
+    printf("\nLUP on delay [s]: ");
+    for (int i = 0; i < 8; i++)
+        printf("%u ", (hk_out.output_on_delta[i]));
+    printf("\nLUP off delay [s]: ");
+    for (int i = 0; i < 8; i++)
+        printf("%u ", (hk_out.output_off_delta[i]));
+    printf("\nNumber of LUPs: ");
+    for (int i = 0; i < 6; i++)
+        printf("%u ", (hk_out.latchup[i]));
+    printf("\n\n");
+}
+
 void *eps_test(void *tid)
 {
     // One-time printouts
@@ -20,7 +87,7 @@ void *eps_test(void *tid)
     printf("\n");
 
     // The command input.
-    int inCommand = -1;
+    int inCommand = -1, LUPID = -1;
 
     while (!done)
     {
@@ -40,7 +107,7 @@ void *eps_test(void *tid)
 
             break;
         case EPS_CMD_TLUP:
-            int LUPID = -1;
+            LUPID = -1;
 
             printf("LUP ID: ");
             scanf(" %d", &LUPID);
@@ -49,7 +116,7 @@ void *eps_test(void *tid)
 
             break;
         case EPS_CMD_SLUP:
-            int LUPID = -1;
+            LUPID = -1;
             int LUPState = -1;
 
             printf("LUP ID: ");
@@ -66,13 +133,15 @@ void *eps_test(void *tid)
 
             break;
         case EPS_CMD_GET_HK:
-            
-            eps_get_hk(get_hk_ptr());
+
+            eps_get_hk(hk);
+            print_hk(hk[0]);
 
             break;
         case EPS_CMD_GET_HK_OUT:
 
-            eps_get_hk_out(get_hkout_ptr())
+            eps_get_hk_out(hkout);
+            print_hk_out(hkout[0]);
 
             break;
         default:
