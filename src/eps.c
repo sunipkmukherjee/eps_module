@@ -25,7 +25,7 @@
   * @brief The EPS object pointer.
   *
   */
-static p31u *eps = NULL;
+static p31u eps[1];
 
 /**
  * @brief Thread local variable that enqueue waits upon
@@ -111,8 +111,6 @@ int eps_hardreset()
 // Initializes the EPS and ping-tests it.
 int eps_init()
 {
-    eps = (p31u *)malloc(sizeof(p31u));
-
     // Check if malloc was successful.
     if (eps == NULL)
     {
@@ -138,6 +136,9 @@ void *eps_thread(void *tid)
     {
         // Reset the watch-dog timer.
         eps_reset_wdt(eps);
+        // add other things here
+
+        
         sleep(EPS_LOOP_TIMER);
     }
 
@@ -149,6 +150,4 @@ void eps_destroy()
 {
     // Destroy / free the eps.
     eps_p31u_destroy(eps);
-    free(eps);
-    eps = NULL;
 }
