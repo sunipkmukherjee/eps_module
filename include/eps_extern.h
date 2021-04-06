@@ -74,6 +74,20 @@ int eps_tgl_lup(eps_lup_idx lup);
   * @return
   */
 int eps_lup_set(eps_lup_idx lup, int pw);
+/**
+ * @brief 
+ * 
+ * @param conf 
+ * @return int 
+ */
+int eps_get_conf(eps_config_t *conf);
+/**
+ * @brief 
+ * 
+ * @param conf 
+ * @return int 
+ */
+int eps_set_conf(eps_config_t *conf);
 
 /**
   * @brief

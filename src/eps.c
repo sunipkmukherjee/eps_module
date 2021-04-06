@@ -130,6 +130,16 @@ int eps_init()
     }
 }
 
+int eps_get_conf(eps_config_t *conf)
+{
+    return eps_p31u_get_conf(eps, conf);
+}
+
+int eps_set_conf(eps_config_t *conf)
+{
+    return eps_p31u_set_conf(eps, conf);
+}
+
 void *eps_thread(void *tid)
 {
     while (!done)
@@ -138,7 +148,7 @@ void *eps_thread(void *tid)
         eps_reset_wdt(eps);
         // add other things here
 
-        
+
         sleep(EPS_LOOP_TIMER);
     }
 

@@ -70,85 +70,172 @@ void print_hk_out(eps_hk_out_t hk_out)
     printf("\n\n");
 }
 
+void printval_conf_t(eps_config_t *conf)
+{
+    printf("PPT Mode: %u\n", conf->ppt_mode);
+    printf("Battheater Mode: %u\n", conf->battheater_mode);
+    printf("Battheater low [C]: %d\n", conf->battheater_low);
+    printf("Battheater high [C]: %d\n", conf->battheater_high);
+    for (int i = 0; i < 8; i++)
+    {
+        printf("[%d] Startup normal: %u\n", i, conf->output_normal_value[i]);
+        printf("[%d] Startup safe: %u\n", i, conf->output_safe_value[i]);
+        printf("[%d] On delay: %u\n", i, conf->output_initial_on_delay[i]);
+        printf("[%d] Off delay: %u\n", i, conf->output_initial_off_delay[i]);
+        printf("\n");
+    }
+    for (int i = 0; i < 3; i++)
+        printf("[%d] Vboost: %u\n", i, conf->vboost[i]);
+    printf("\n");
+}
+
+void getval_conf_t(eps_config_t *conf)
+{
+    char buf[10];
+    printf("Edit EPS Configuration\nPress <.> to skip\n");
+    printf("PPT Mode: %u > ", conf->ppt_mode);
+    scanf(" %s", buf);
+    if (strncmp(buf, ".", 1))
+        conf->ppt_mode = atoi(buf);
+    printf("Battheater Mode: %u > ", conf->battheater_mode);
+    scanf(" %s", buf);
+    if (strncmp(buf, ".", 1))
+        conf->battheater_mode = atoi(buf);
+    printf("Battheater low [C]: %d > ", conf->battheater_low);
+    scanf(" %s", buf);
+    if (strncmp(buf, ".", 1))
+        conf->battheater_low = atoi(buf);
+    printf("Battheater high [C]: %d > ", conf->battheater_high);
+    scanf(" %s", buf);
+    if (strncmp(buf, ".", 1))
+        conf->battheater_high = atoi(buf);
+    for (int i = 0; i < 8; i++)
+    {
+        printf("[%d] Startup normal: %u > ", i, conf->output_normal_value[i]);
+        scanf(" %s", buf);
+        if (strncmp(buf, ".", 1))
+            conf->output_normal_value[i] = atoi(buf);
+        printf("[%d] Startup safe: %u > ", i, conf->output_safe_value[i]);
+        scanf(" %s", buf);
+        if (strncmp(buf, ".", 1))
+            conf->output_safe_value[i] = atoi(buf);
+        printf("[%d] On delay: %u > ", i, conf->output_initial_on_delay[i]);
+        scanf(" %s", buf);
+        if (strncmp(buf, ".", 1))
+            conf->output_initial_on_delay[i] = atoi(buf);
+        printf("[%d] Off delay: %u > ", i, conf->output_initial_off_delay[i]);
+        scanf(" %s", buf);
+        if (strncmp(buf, ".", 1))
+            conf->output_initial_off_delay[i] = atoi(buf);
+        printf("\n");
+    }
+    for (int i = 0; i < 3; i++)
+    {
+        printf("[%d] Vboost: %u> ", i, conf->vboost[i]);
+        scanf(" %s", buf);
+        if (strncmp(buf, ".", 1))
+            conf->vboost[i] = atoi(buf);
+    }
+    printf("\n");
+}
+
 void *eps_test(void *tid)
 {
-    // One-time printouts
-    printf("Unit Test Program for EPS Module\n");
-    printf("********************************\n");
-    printf("\n");
-    printf("Valid Commands\n");
-    printf("0: Ping\n");
-    printf("1: Reboot\n");
-    printf("2: Toggle LUP\n");
-    printf("3: Set LUP\n");
-    printf("4: Hard Reset\n");
-    printf("5: Get HK\n");
-    printf("6: Get HK Out\n");
-    printf("^D: Quit\n");
-    printf("\n");
-
-    // The command input.
-    int inCommand = -1, LUPID = -1;
-
+    hkparam_t hk;
+    eps_hk_out_t hk_out;
+    eps_config_t conf[1];
+    char c = 0x0;
+    int lup = 0;
+#ifdef NO_LUP_TGL
+    int pw_stat[6] = {0, 0, 0, 0, 0, 0};
+#endif
     while (!done)
     {
-        printf("Please enter a valid command...\n");
-        printf("> ");
-
-        inCommand = getchar() - '0';
-        if (inCommand <= EOF)
-            break;
-        switch (inCommand)
+        printf("[p]ing, [k]ill eps, get [h]ousekeeping, [c]onfig, [r]eboot, toggle [l]atchup, [q]uit: ");
+        c = getchar();
+        fflush(stdin);
+        printf("\n");
+        switch (c)
         {
-        case EPS_CMD_PING:
+        case 'p':
+        case 'P':
             eps_ping();
-
             break;
-        case EPS_CMD_REBOOT:
+        case 'h':
+        case 'H':
+            memset(&hk, 0x0, sizeof(hkparam_t));
+            eps_get_hk(&hk);
+            memset(&hk_out, 0x0, sizeof(eps_hk_out_t));
+            eps_get_hk_out(&hk_out);
+            print_hk(hk);
+            print_hk_out(hk_out);
+            break;
+        case 'c':
+        case 'C':
+            printf("Select command:\n"
+                   "\t1: Get config\n"
+                   "\t2: Set config\n"
+                   "Enter response (1 -- 2): ");
+            int confsel = 0;
+            if (scanf(" %d", &confsel) < 0)
+                break;
+            if (confsel == 1)
+            {
+                eps_get_conf(conf);
+                printval_conf_t(conf);
+            }
+            else if (confsel == 2)
+            {
+                eps_get_conf(conf);
+                getval_conf_t(conf);
+                eps_set_conf(conf);
+            }
+            break;
+        case 'l':
+        case 'L':
+            printf("Select latch up:\n"
+                   "\t1: 5V1\n"
+                   "\t2: 5V2\n"
+                   "\t3: 5V3\n"
+                   "\t4: 3V1\n"
+                   "\t5: 3V2\n"
+                   "\t6: 3V3\nEnter response (1 -- 6): ");
+            if (scanf(" %d", &lup) < 0)
+                break;
+#ifndef NO_LUP_TGL
+            eps_tgl_lup(lup - 1);
+#else
+            if (pw_stat[lup - 1] == 0)
+            {
+                eps_lup_set(lup - 1, 1);
+                pw_stat[lup - 1] = 1;
+            }
+            else
+            {
+                eps_lup_set(lup - 1, 0);
+                pw_stat[lup - 1] = 0;
+            }
+#endif
+            break;
+        case 'r':
+        case 'R':
+            printf("Resetting EPS...\n");
             eps_reboot();
-
+            sleep(2);
             break;
-        case EPS_CMD_TLUP:
-            LUPID = -1;
-
-            printf("LUP ID: ");
-            scanf(" %d", &LUPID);
-
-            eps_tgl_lup(LUPID);
-
-            break;
-        case EPS_CMD_SLUP:
-            LUPID = -1;
-            int LUPState = -1;
-
-            printf("LUP ID: ");
-            scanf(" %d", &LUPID);
-
-            printf("On (1) / Off (0): ");
-            scanf(" %d", &LUPState);
-
-            eps_lup_set(LUPID, LUPState);
-
-            break;
-        case EPS_CMD_HARDRESET:
+        case 'k':
+        case 'K':
+            printf("Hard resetting EPS...\n");
+            sleep(1);
             eps_hardreset();
-
             break;
-        case EPS_CMD_GET_HK:
-
-            eps_get_hk(hk);
-            print_hk(hk[0]);
-
-            break;
-        case EPS_CMD_GET_HK_OUT:
-
-            eps_get_hk_out(hkout);
-            print_hk_out(hkout[0]);
-
+        case 'q':
+        case 'Q':
+            printf("main: quitting...");
+            done = 1;
+            printf("\tdone = %d\n", done);
             break;
         default:
-            printf("Error: Invalid input.");
-            fflush(stdout);
             break;
         }
     }
