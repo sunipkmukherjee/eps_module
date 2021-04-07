@@ -17,6 +17,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <pthread.h>
+#include <unistd.h>
 
 /* Variable allocation for EPS */
 
@@ -24,7 +25,7 @@
   * @brief The EPS object pointer.
   *
   */
-static p31u *eps = NULL;
+static p31u eps[1];
 
 /**
  * @brief Thread local variable that enqueue waits upon
@@ -110,8 +111,6 @@ int eps_hardreset()
 // Initializes the EPS and ping-tests it.
 int eps_init()
 {
-    eps = (p31u *)malloc(sizeof(p31u));
-
     // Check if malloc was successful.
     if (eps == NULL)
     {
@@ -129,6 +128,17 @@ int eps_init()
     {
         return -2;
     }
+    return 1;
+}
+
+int eps_get_conf(eps_config_t *conf)
+{
+    return eps_p31u_get_conf(eps, conf);
+}
+
+int eps_set_conf(eps_config_t *conf)
+{
+    return eps_p31u_set_conf(eps, conf);
 }
 
 void *eps_thread(void *tid)
@@ -137,6 +147,10 @@ void *eps_thread(void *tid)
     {
         // Reset the watch-dog timer.
         eps_reset_wdt(eps);
+        // add other things here
+
+
+        sleep(EPS_LOOP_TIMER);
     }
 
     pthread_exit(NULL);
@@ -147,6 +161,4 @@ void eps_destroy()
 {
     // Destroy / free the eps.
     eps_p31u_destroy(eps);
-    free(eps);
-    eps = NULL;
 }

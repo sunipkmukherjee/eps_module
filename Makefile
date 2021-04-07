@@ -15,6 +15,8 @@ endif
 EDCFLAGS:= -Wall -fno-strict-aliasing -std=gnu11 -O2 $(EDCFLAGS)
 EDLDFLAGS:= -lm -lpthread $(EDLDFLAGS)
 
+EDCFLAGS+= -Wno-unused-result -Wno-format
+
 TARGETOBJS=drivers/i2cbus/i2cbus.o  \
 			drivers/eps_p31u/p31u.o \
 			src/eps.o \
