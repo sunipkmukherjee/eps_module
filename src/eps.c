@@ -27,17 +27,6 @@
   */
 static p31u eps[1];
 
-/**
- * @brief Thread local variable that enqueue waits upon
- * 
- */
-__thread pthread_cond_t eps_cmd_wait[1];
-/**
- * @brief Mutex for the queue wait
- * 
- */
-__thread pthread_mutex_t eps_cmd_wait_m[1];
-
 int eps_ping()
 {
     if (eps == NULL)

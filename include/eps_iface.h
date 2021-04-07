@@ -2,7 +2,7 @@
  * @file eps_iface.h
  * @author Mit Bailey (mitbailey99@gmail.com)
  * @brief
- * @version 0.2
+ * @version 0.3
  * @date 2021-03-17
  *
  * @copyright Copyright (c) 2021
@@ -27,15 +27,13 @@ int eps_init();
  * @brief EPS thread.
  *
  * @param tid Pointer to an integer containing the thread ID.
- * @return NULL.
+ * @return Void pointer.
  */
 void *eps_thread(void *tid);
 
 /**
  * @brief Frees and destroys.
  *
- *
- * @return NULL.
  */
 void eps_destroy();
 
