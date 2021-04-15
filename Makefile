@@ -12,7 +12,7 @@ ifeq ($(ARCH),UNDEFINED)
 	ARCH=$(shell uname -m)
 endif
 
-EDCFLAGS:= -Wall -fno-strict-aliasing -std=gnu11 -O2 $(EDCFLAGS)
+EDCFLAGS:= -Wall -fno-strict-aliasing -std=gnu11 -O2 $(EDCFLAGS) $(DEBUG)
 EDLDFLAGS:= -lm -lpthread $(EDLDFLAGS)
 
 EDCFLAGS+= -Wno-unused-result -Wno-format
